@@ -1,49 +1,537 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import ServiceCard from '../components/ServiceCard.astro';
+import { supabase } from '../lib/supabase';
+
+// Fetch editable content
+const { data: rows } = await supabase.from('contenidos').select('clave, valor');
+const c: Record<string, string> = {};
+if (rows) {
+  for (const row of rows) {
+    c[row.clave] = row.valor;
+  }
+}
+
+// Helper with fallback
+const t = (key: string, fallback: string) => c[key] ?? fallback;
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
-</html>
+<Layout title="Inicio">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__bg" aria-hidden="true">
+      <div class="hero__gradient"></div>
+      <div class="hero__dots"></div>
+    </div>
+    <div class="hero__inner container">
+      <div class="hero__content">
+        <span class="badge reveal">{t('hero_badge', 'Clínica veterinaria profesional')}</span>
+        <h1 class="hero__title reveal">{t('hero_titulo', 'Cuidamos la salud de tu mejor amigo')}</h1>
+        <p class="hero__subtitle reveal">{t('hero_subtitulo', 'Equipo veterinario con más de 15 años de experiencia en el cuidado integral de mascotas. Consultas, cirugía, urgencias y mucho más.')}</p>
+        <div class="hero__actions reveal">
+          <a href="/citas" class="btn btn--primary">
+            Agendar una cita
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="/servicios" class="btn btn--secondary">Ver servicios</a>
+        </div>
+      </div>
+      <div class="hero__visual reveal">
+        <div class="hero__card">
+          <div class="hero__card-icon">
+            <svg width="40" height="40" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <circle cx="10" cy="8" r="3.5" fill="currentColor" opacity="0.8"/>
+              <circle cx="22" cy="8" r="3.5" fill="currentColor" opacity="0.8"/>
+              <circle cx="5" cy="16" r="3" fill="currentColor" opacity="0.6"/>
+              <circle cx="27" cy="16" r="3" fill="currentColor" opacity="0.6"/>
+              <ellipse cx="16" cy="22" rx="8" ry="7" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="hero__card-text">
+            <span class="hero__card-label">Urgencias</span>
+            <span class="hero__card-value">{t('stats_urgencias', '24/7')}</span>
+          </div>
+        </div>
+        <div class="hero__card hero__card--alt">
+          <div class="hero__card-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          </div>
+          <div class="hero__card-text">
+            <span class="hero__card-label">Mascotas felices</span>
+            <span class="hero__card-value">+{t('stats_mascotas', '5,000+')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats">
+    <div class="container">
+      <div class="stats__grid reveal">
+        <div class="stats__item">
+          <span class="stats__number">{t('stats_experiencia', '15+')}</span>
+          <span class="stats__label">Años de experiencia</span>
+        </div>
+        <div class="stats__divider" aria-hidden="true"></div>
+        <div class="stats__item">
+          <span class="stats__number">{t('stats_mascotas', '5,000+')}</span>
+          <span class="stats__label">Mascotas atendidas</span>
+        </div>
+        <div class="stats__divider" aria-hidden="true"></div>
+        <div class="stats__item">
+          <span class="stats__number">{t('stats_especialidades', '8')}</span>
+          <span class="stats__label">Especialidades</span>
+        </div>
+        <div class="stats__divider" aria-hidden="true"></div>
+        <div class="stats__item">
+          <span class="stats__number">{t('stats_urgencias', '24/7')}</span>
+          <span class="stats__label">Urgencias</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section class="services section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="badge">{t('servicios_badge', 'Lo que hacemos')}</span>
+        <h2>{t('servicios_titulo', 'Nuestros servicios')}</h2>
+        <p>{t('servicios_subtitulo', 'Atención integral y especializada para el bienestar de tu mascota')}</p>
+      </div>
+      <div class="services__grid">
+        <div class="reveal">
+          <ServiceCard icon="syringe" title="Vacunación" description="Programa completo de vacunación para cachorros y adultos. Protección contra las principales enfermedades." />
+        </div>
+        <div class="reveal">
+          <ServiceCard icon="stethoscope" title="Consulta General" description="Revisiones completas, diagnósticos precisos y planes de tratamiento personalizados." />
+        </div>
+        <div class="reveal">
+          <ServiceCard icon="tooth" title="Odontología" description="Limpieza dental profesional, extracciones y tratamientos para una higiene oral perfecta." />
+        </div>
+        <div class="reveal">
+          <ServiceCard icon="scissors" title="Peluquería" description="Baños, cortes, deslanado y tratamientos estéticos adaptados a cada raza." />
+        </div>
+      </div>
+      <div class="services__cta reveal">
+        <a href="/servicios" class="btn btn--outline">
+          Ver todos los servicios
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why us -->
+  <section class="why section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="badge">{t('why_badge', 'Por qué elegirnos')}</span>
+        <h2>{t('why_titulo', 'Para nosotros, tu mascota es familia')}</h2>
+      </div>
+      <div class="why__grid">
+        <div class="why__card reveal">
+          <div class="why__icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h3>{t('why_1_titulo', 'Equipo certificado')}</h3>
+          <p>{t('why_1_desc', 'Veterinarios colegiados con formación continua y especializaciones de alto nivel.')}</p>
+        </div>
+        <div class="why__card reveal">
+          <div class="why__icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>{t('why_2_titulo', 'Urgencias 24 horas')}</h3>
+          <p>{t('why_2_desc', 'Disponibles todos los días del año para cualquier emergencia de tu mascota.')}</p>
+        </div>
+        <div class="why__card reveal">
+          <div class="why__icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          </div>
+          <h3>{t('why_3_titulo', 'Trato con cariño')}</h3>
+          <p>{t('why_3_desc', 'Entorno tranquilo y amable donde tu mascota se sentirá segura y cómoda.')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta reveal">
+    <div class="container">
+      <div class="cta__inner">
+        <h2>{t('cta_titulo', '¿Tu mascota necesita atención?')}</h2>
+        <p>{t('cta_subtitulo', 'Reserva tu cita online en menos de un minuto. Sin esperas, sin complicaciones.')}</p>
+        <a href="/citas" class="btn btn--white">
+          Agendar cita ahora
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* ==========================================
+     Hero
+     ========================================== */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-4xl) 0;
+    min-height: 85vh;
+    display: flex;
+    align-items: center;
+  }
+
+  .hero__bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .hero__gradient {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 0% 50%, rgba(45, 106, 79, 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 100% 0%, rgba(5, 150, 105, 0.06) 0%, transparent 70%);
+  }
+
+  .hero__dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(45, 106, 79, 0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .hero__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3xl);
+    align-items: center;
+  }
+
+  .hero__title {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--color-text);
+    margin-bottom: var(--space-lg);
+  }
+
+  .hero__subtitle {
+    font-size: 1.15rem;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    max-width: 480px;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .hero__actions {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  .hero__visual {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero__card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xl) var(--space-2xl);
+    box-shadow: var(--shadow-lg);
+    min-width: 280px;
+    transition: transform var(--transition-base);
+  }
+
+  .hero__card:hover {
+    transform: translateY(-2px);
+  }
+
+  .hero__card--alt {
+    transform: translateX(40px);
+  }
+
+  .hero__card--alt:hover {
+    transform: translateX(40px) translateY(-2px);
+  }
+
+  .hero__card-icon {
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .hero__card-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+  }
+
+  .hero__card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.02em;
+  }
+
+  /* ==========================================
+     Buttons
+     ========================================== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: var(--radius-full);
+    padding: 0.75rem 1.75rem;
+    text-decoration: none;
+    border: 2px solid transparent;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+  }
+
+  .btn--primary {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+
+  .btn--primary:hover {
+    background: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(45, 106, 79, 0.3);
+  }
+
+  .btn--secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+
+  .btn--secondary:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .btn--outline {
+    background: transparent;
+    color: var(--color-primary);
+    border-color: var(--color-primary-200);
+  }
+
+  .btn--outline:hover {
+    background: var(--color-primary-50);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .btn--white {
+    background: #fff;
+    color: var(--color-primary);
+    border-color: #fff;
+  }
+
+  .btn--white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  /* ==========================================
+     Stats
+     ========================================== */
+  .stats {
+    padding: var(--space-3xl) 0;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .stats__grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2xl);
+  }
+
+  .stats__item {
+    text-align: center;
+    padding: 0 var(--space-xl);
+  }
+
+  .stats__number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+  }
+
+  .stats__label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .stats__divider {
+    width: 1px;
+    height: 40px;
+    background: var(--color-border);
+  }
+
+  /* ==========================================
+     Services
+     ========================================== */
+  .services__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .services__cta {
+    text-align: center;
+    margin-top: var(--space-2xl);
+  }
+
+  /* ==========================================
+     Why us
+     ========================================== */
+  .why {
+    background: var(--color-surface);
+  }
+
+  .why__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .why__card {
+    padding: var(--space-2xl);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  }
+
+  .why__card:hover {
+    border-color: var(--color-primary-200);
+    box-shadow: var(--shadow-md);
+  }
+
+  .why__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--color-primary-50);
+    color: var(--color-primary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+  }
+
+  .why__card h3 {
+    font-size: 1.1rem;
+    font-weight: 650;
+    margin-bottom: var(--space-sm);
+    color: var(--color-text);
+  }
+
+  .why__card p {
+    color: var(--color-text-secondary);
+    font-size: 0.925rem;
+    line-height: 1.65;
+  }
+
+  /* ==========================================
+     CTA
+     ========================================== */
+  .cta {
+    padding: var(--space-3xl) 0;
+  }
+
+  .cta__inner {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    border-radius: var(--radius-xl);
+    padding: var(--space-3xl) var(--space-2xl);
+    text-align: center;
+    color: #fff;
+  }
+
+  .cta__inner h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    margin-bottom: var(--space-md);
+    letter-spacing: -0.02em;
+  }
+
+  .cta__inner p {
+    opacity: 0.9;
+    font-size: 1.05rem;
+    margin-bottom: var(--space-xl);
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ==========================================
+     Responsive
+     ========================================== */
+  @media (max-width: 768px) {
+    .hero {
+      min-height: auto;
+      padding: var(--space-3xl) 0;
+    }
+
+    .hero__inner {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+
+    .hero__subtitle {
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero__actions {
+      justify-content: center;
+    }
+
+    .hero__visual {
+      display: none;
+    }
+
+    .stats__grid {
+      flex-wrap: wrap;
+      gap: var(--space-lg);
+    }
+
+    .stats__divider {
+      display: none;
+    }
+
+    .stats__item {
+      flex: 1 1 40%;
+    }
+  }
+</style>

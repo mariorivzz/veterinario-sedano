@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "skills": {
+    "bootstrap": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "52acb7e6c7e34f024b6be0a4d1a84fef7165a04d3261350bd28b7fbdc296d9b4"
+    },
+    "deployments-cicd": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "721c93b2b503498dbf48e475dcac879e5090bf10ed978028837e71194f915590"
+    },
+    "env-vars": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "71ed66ce3f0a81643654cb536fa08d780cba01e5800d7d93a5eb77e9c2a4d693"
+    }
+  }
+}
