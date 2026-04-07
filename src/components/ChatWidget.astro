@@ -1,0 +1,452 @@
+---
+// Chat Widget — no props needed, se añade al Layout globalmente
+---
+
+<!-- Botón flotante -->
+<button id="chat-toggle" class="chat-toggle" aria-label="Abrir chat de ayuda" aria-expanded="false">
+  <svg class="chat-toggle__icon--open" width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <circle cx="10" cy="8" r="3.5" fill="currentColor" opacity="0.8"/>
+    <circle cx="22" cy="8" r="3.5" fill="currentColor" opacity="0.8"/>
+    <circle cx="5" cy="16" r="3" fill="currentColor" opacity="0.6"/>
+    <circle cx="27" cy="16" r="3" fill="currentColor" opacity="0.6"/>
+    <ellipse cx="16" cy="22" rx="8" ry="7" fill="currentColor"/>
+  </svg>
+  <svg class="chat-toggle__icon--close" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" style="display:none">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+  <span class="chat-toggle__badge" id="chat-badge" style="display:none">1</span>
+</button>
+
+<!-- Ventana del chat -->
+<div id="chat-window" class="chat-window" aria-hidden="true" role="dialog" aria-label="Chat con VetCare">
+  <div class="chat-header">
+    <div class="chat-header__info">
+      <div class="chat-header__avatar" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+          <circle cx="10" cy="8" r="3.5" fill="white" opacity="0.9"/>
+          <circle cx="22" cy="8" r="3.5" fill="white" opacity="0.9"/>
+          <circle cx="5" cy="16" r="3" fill="white" opacity="0.7"/>
+          <circle cx="27" cy="16" r="3" fill="white" opacity="0.7"/>
+          <ellipse cx="16" cy="22" rx="8" ry="7" fill="white"/>
+        </svg>
+      </div>
+      <div>
+        <div class="chat-header__name">Asistente VetCare</div>
+        <div class="chat-header__status">
+          <span class="chat-header__dot"></span> En línea
+        </div>
+      </div>
+    </div>
+    <button class="chat-header__close" id="chat-close" aria-label="Cerrar chat">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="chat-messages" id="chat-messages" role="log" aria-live="polite">
+    <div class="chat-msg chat-msg--bot">
+      <div class="chat-msg__bubble">
+        ¡Hola! 👋 Soy el asistente de <strong>VetCare</strong>. Puedo ayudarte con información sobre nuestros servicios, consejos para tu mascota o a reservar una cita. ¿En qué puedo ayudarte?
+      </div>
+    </div>
+  </div>
+
+  <form class="chat-form" id="chat-form" autocomplete="off">
+    <input
+      type="text"
+      id="chat-input"
+      class="chat-input"
+      placeholder="Escribe tu pregunta..."
+      maxlength="500"
+      aria-label="Mensaje"
+      required
+    />
+    <button type="submit" class="chat-send" id="chat-send" aria-label="Enviar mensaje">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </form>
+</div>
+
+<style>
+  /* ============================
+     Toggle button
+     ============================ */
+  .chat-toggle {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1000;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #2d6a4f;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(45, 106, 79, 0.4);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+
+  .chat-toggle:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 28px rgba(45, 106, 79, 0.5);
+  }
+
+  .chat-toggle__badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 18px;
+    height: 18px;
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+  }
+
+  /* ============================
+     Chat window
+     ============================ */
+  .chat-window {
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    z-index: 999;
+    width: 360px;
+    max-height: 520px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.14);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease;
+  }
+
+  .chat-window.is-open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  .chat-header {
+    background: #2d6a4f;
+    color: white;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .chat-header__info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .chat-header__avatar {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .chat-header__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .chat-header__status {
+    font-size: 0.72rem;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .chat-header__dot {
+    width: 7px;
+    height: 7px;
+    background: #4ade80;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .chat-header__close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    opacity: 0.8;
+    transition: opacity 150ms;
+  }
+  .chat-header__close:hover { opacity: 1; }
+
+  /* Messages */
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: #f8faf9;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+  .chat-msg { display: flex; }
+  .chat-msg--user { justify-content: flex-end; }
+  .chat-msg--bot { justify-content: flex-start; }
+
+  .chat-msg__bubble {
+    max-width: 82%;
+    padding: 0.6rem 0.9rem;
+    border-radius: 14px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .chat-msg--user .chat-msg__bubble {
+    background: #2d6a4f;
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-msg--bot .chat-msg__bubble {
+    background: white;
+    color: #1a1a2e;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  /* Typing indicator */
+  .chat-msg--typing .chat-msg__bubble {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .typing-dot {
+    width: 7px;
+    height: 7px;
+    background: #9ca3af;
+    border-radius: 50%;
+    animation: typing-bounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing-bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+  }
+
+  /* Form */
+  .chat-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+    flex-shrink: 0;
+  }
+
+  .chat-input {
+    flex: 1;
+    padding: 0.55rem 0.85rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    outline: none;
+    background: #f8faf9;
+    transition: border-color 150ms;
+  }
+  .chat-input:focus { border-color: #2d6a4f; background: white; }
+
+  .chat-send {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #2d6a4f;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 150ms, opacity 150ms;
+  }
+  .chat-send:hover { background: #1b4332; }
+  .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .chat-window {
+      right: 0.75rem;
+      left: 0.75rem;
+      width: auto;
+      bottom: 4.5rem;
+    }
+    .chat-toggle {
+      right: 1rem;
+      bottom: 1rem;
+    }
+  }
+</style>
+
+<script>
+  const toggle = document.getElementById('chat-toggle')!;
+  const window_ = document.getElementById('chat-window')!;
+  const closeBtn = document.getElementById('chat-close')!;
+  const form = document.getElementById('chat-form') as HTMLFormElement;
+  const input = document.getElementById('chat-input') as HTMLInputElement;
+  const sendBtn = document.getElementById('chat-send') as HTMLButtonElement;
+  const messages = document.getElementById('chat-messages')!;
+  const badge = document.getElementById('chat-badge')!;
+  const iconOpen = toggle.querySelector('.chat-toggle__icon--open') as HTMLElement;
+  const iconClose = toggle.querySelector('.chat-toggle__icon--close') as HTMLElement;
+
+  let isOpen = false;
+  let isLoading = false;
+  let history: { role: string; content: string }[] = [];
+
+  function openChat() {
+    isOpen = true;
+    window_.classList.add('is-open');
+    window_.setAttribute('aria-hidden', 'false');
+    toggle.setAttribute('aria-expanded', 'true');
+    iconOpen.style.display = 'none';
+    iconClose.style.display = '';
+    badge.style.display = 'none';
+    input.focus();
+  }
+
+  function closeChat() {
+    isOpen = false;
+    window_.classList.remove('is-open');
+    window_.setAttribute('aria-hidden', 'true');
+    toggle.setAttribute('aria-expanded', 'false');
+    iconOpen.style.display = '';
+    iconClose.style.display = 'none';
+  }
+
+  toggle.addEventListener('click', () => isOpen ? closeChat() : openChat());
+  closeBtn.addEventListener('click', closeChat);
+
+  function scrollToBottom() {
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function addMessage(role: 'user' | 'bot', content: string) {
+    const div = document.createElement('div');
+    div.className = `chat-msg chat-msg--${role}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-msg__bubble';
+    bubble.innerHTML = content.replace(/\n/g, '<br>');
+    div.appendChild(bubble);
+    messages.appendChild(div);
+    scrollToBottom();
+    return div;
+  }
+
+  function addTypingIndicator() {
+    const div = document.createElement('div');
+    div.className = 'chat-msg chat-msg--bot chat-msg--typing';
+    div.id = 'typing-indicator';
+    div.innerHTML = `<div class="chat-msg__bubble">
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+    </div>`;
+    messages.appendChild(div);
+    scrollToBottom();
+  }
+
+  function removeTypingIndicator() {
+    document.getElementById('typing-indicator')?.remove();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || isLoading) return;
+
+    isLoading = true;
+    sendBtn.disabled = true;
+    input.value = '';
+
+    // Add user message
+    addMessage('user', text);
+    history.push({ role: 'user', content: text });
+
+    // Show typing
+    addTypingIndicator();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+
+      const data = await res.json();
+      removeTypingIndicator();
+
+      if (!res.ok) {
+        console.error('[chat] Error:', data);
+        addMessage('bot', `⚠️ ${data.error ?? 'Error desconocido'}. Puedes llamarnos al <strong>(+34) 600 123 456</strong>.`);
+        return;
+      }
+
+      const reply = data.reply ?? 'Lo siento, no pude generar una respuesta.';
+      history.push({ role: 'assistant', content: reply });
+      addMessage('bot', reply);
+
+      // Show badge if chat is closed
+      if (!isOpen) {
+        badge.style.display = 'flex';
+      }
+    } catch {
+      removeTypingIndicator();
+      addMessage('bot', 'Lo siento, no puedo responder en este momento. Puedes llamarnos al <strong>(+34) 600 123 456</strong>.');
+    } finally {
+      isLoading = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  });
+</script>

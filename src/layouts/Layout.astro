@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import ChatWidget from '../components/ChatWidget.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -29,6 +30,7 @@ const { title, description = 'Clínica veterinaria profesional. Cuidamos a tu ma
       <slot />
     </main>
     <Footer />
+    <ChatWidget />
     <script>
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
