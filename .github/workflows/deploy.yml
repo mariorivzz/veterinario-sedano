@@ -1,12 +1,15 @@
 name: Deploy to Vercel
 
+# Workflow desactivado — Vercel despliega automáticamente desde GitHub
+# sin necesidad de este workflow. Actívalo solo si necesitas CI personalizado.
 on:
-  push:
-    branches:
-      - main        # Deploy a producción al hacer push a main
-  pull_request:
-    branches:
-      - main        # Deploy de preview al abrir una PR hacia main
+  workflow_dispatch: # Solo se ejecuta manualmente
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    if: false # Desactivado
 
 jobs:
   deploy:
