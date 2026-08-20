@@ -385,12 +385,29 @@ const comoContactar = telefono
     messages.scrollTop = messages.scrollHeight;
   }
 
+  /**
+   * Pinta el texto de un mensaje sin meter HTML ajeno en la página.
+   * Escapamos todo primero y solo después reconstruimos lo poco que
+   * permitimos: saltos de línea y **negrita**.
+   */
+  function pintarTexto(destino: HTMLElement, texto: string) {
+    const escapado = texto
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    destino.innerHTML = escapado
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  }
+
   function addMessage(role: 'user' | 'bot', content: string) {
     const div = document.createElement('div');
     div.className = `chat-msg chat-msg--${role}`;
     const bubble = document.createElement('div');
     bubble.className = 'chat-msg__bubble';
-    bubble.innerHTML = content.replace(/\n/g, '<br>');
+    pintarTexto(bubble, content);
     div.appendChild(bubble);
     messages.appendChild(div);
     scrollToBottom();
