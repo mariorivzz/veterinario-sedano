@@ -8,12 +8,12 @@ interface Props {
 const { title, description, icon } = Astro.props;
 
 const iconMap: Record<string, string> = {
-  syringe: '<path d="M18.5 2.5L21.5 5.5M15 1L23 9M2 18L13 7L17 11L6 22H2V18Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-  stethoscope: '<path d="M4.8 2.3A2 2 0 003 4v1a4 4 0 008 0V4a2 2 0 00-1.8-1.7M3 4h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 5v4a6 6 0 01-6 6H4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="15" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M17 12V9a4 4 0 014-4h0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  syringe: '<path d="M18 2l4 4M17 7l3-3M19 9L8.7 19.3a2.4 2.4 0 01-3.4 0l-.6-.6a2.4 2.4 0 010-3.4L15 5M9 11l4 4M5 19l-3 3M14 4l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  stethoscope: '<path d="M6 2H4a2 2 0 00-2 2v5a6 6 0 0012 0V4a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 15v1a6 6 0 0012 0v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="10" r="2" stroke="currentColor" stroke-width="1.8"/>',
   tooth: '<path d="M12 2C8 2 5 5 5 8c0 4 1 6 2 9 .6 1.8 1.2 3 2 3s1.5-1.5 2-3l1-2 1 2c.5 1.5 1.2 3 2 3s1.4-1.2 2-3c1-3 2-5 2-9 0-3-3-6-7-6z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   scissors: '<circle cx="6" cy="6" r="3" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-  microscope: '<path d="M6 18h8M3 22h18M14 2v8a2 2 0 002 2h0a2 2 0 002-2V2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 22a7 7 0 017-7h0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 2v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-  hospital: '<path d="M3 21h18M5 21V7l7-4 7 4v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21v-4h6v4M10 11h4M12 9v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  microscope: '<path d="M6 18h8M3 22h18M14 22a7 7 0 100-14h-1M9 14h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12a2 2 0 01-2-2V6h6v4a2 2 0 01-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6V3a1 1 0 00-1-1H9a1 1 0 00-1 1v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  hospital: '<path d="M8 21V10a2 2 0 012-2h4a2 2 0 012 2v11M3 21h18M12 4v4M10 6h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21V13a2 2 0 012-2h2M20 21V13a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   pill: '<path d="M10.5 1.5l-8 8a4.95 4.95 0 007 7l8-8a4.95 4.95 0 00-7-7zM9 8l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   ambulance: '<path d="M10 10H6M10 14H8M15 10V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="1" y="6" width="15" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 9h4l3 5v4h-7V9z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="19.5" cy="19.5" r="1.5" fill="currentColor"/>',
 };
@@ -33,17 +33,19 @@ const svgPath = iconMap[icon] || iconMap['stethoscope'];
 
 <style>
   .card {
+    height: 100%;
     background: var(--color-surface);
     border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-sm);
     transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
   }
 
   .card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary-200);
+    border-color: var(--color-primary-tint-strong);
   }
 
   .card__icon {
@@ -52,23 +54,22 @@ const svgPath = iconMap[icon] || iconMap['stethoscope'];
     justify-content: center;
     width: 48px;
     height: 48px;
-    background: var(--color-primary-50);
+    background: var(--color-primary-tint);
     color: var(--color-primary);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--space-lg);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-3);
   }
 
   .card__title {
-    font-size: 1.1rem;
-    font-weight: 650;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
     color: var(--color-text);
-    margin-bottom: var(--space-sm);
-    letter-spacing: -0.01em;
+    margin-bottom: var(--space-2);
   }
 
   .card__desc {
     color: var(--color-text-secondary);
-    font-size: 0.925rem;
+    font-size: var(--text-sm);
     line-height: 1.65;
   }
 </style>

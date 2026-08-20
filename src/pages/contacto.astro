@@ -2,9 +2,11 @@
 export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
+import Dato from '../components/Dato.astro';
 import { supabase } from '../lib/supabase';
+import { clinica, telefonoEnlace, valor } from '../config/clinica';
 
-// Fetch editable content
+// Textos editables desde el panel de administración
 const { data: rows } = await supabase.from('contenidos').select('clave, valor');
 const c: Record<string, string> = {};
 if (rows) {
@@ -13,14 +15,20 @@ if (rows) {
   }
 }
 const t = (key: string, fallback: string) => c[key] ?? fallback;
+
+const tel = telefonoEnlace();
+const email = valor(clinica.email);
 ---
 
-<Layout title="Contacto">
+<Layout
+  title="Contacto"
+  description="Teléfono, dirección y horario de la Clínica Veterinaria Sedano, en Salamanca."
+>
   <section class="page-hero">
     <div class="container">
       <span class="badge reveal">Contacto</span>
-      <h1 class="reveal">Estamos aquí para ayudarte</h1>
-      <p class="reveal">Escríbenos o visítanos. Estaremos encantados de atenderte.</p>
+      <h1 class="reveal">{t('contacto_titulo', 'Estamos aquí para ayudarte')}</h1>
+      <p class="reveal">{t('contacto_subtitulo', 'Llámanos, escríbenos o pásate por la clínica. Te atendemos encantados.')}</p>
     </div>
   </section>
 
@@ -28,15 +36,19 @@ const t = (key: string, fallback: string) => c[key] ?? fallback;
     <div class="container">
       <div class="contact__grid">
         <div class="contact__info reveal">
-          <h2>Información de contacto</h2>
+          <h2>Dónde encontrarnos</h2>
 
           <div class="contact__item">
             <div class="contact__icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
             </div>
             <div>
-              <strong>Dirección</strong>
-              <p>{t('contacto_direccion', 'Calle Ejemplo 123, Ciudad, País')}</p>
+              <h3>Dirección</h3>
+              <p>
+                <a href={clinica.mapa} target="_blank" rel="noopener">
+                  <Dato dato={clinica.direccion} />
+                </a>
+              </p>
             </div>
           </div>
 
@@ -45,8 +57,8 @@ const t = (key: string, fallback: string) => c[key] ?? fallback;
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
             </div>
             <div>
-              <strong>Teléfono</strong>
-              <p>{t('contacto_telefono', '(+34) 600 123 456')}</p>
+              <h3>Teléfono</h3>
+              <p>{tel ? <a href={tel}>{clinica.telefono}</a> : <Dato dato={clinica.telefono} />}</p>
             </div>
           </div>
 
@@ -55,8 +67,8 @@ const t = (key: string, fallback: string) => c[key] ?? fallback;
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
             <div>
-              <strong>Email</strong>
-              <p>{t('contacto_email', 'info@vetcare.com')}</p>
+              <h3>Correo</h3>
+              <p>{email ? <a href={`mailto:${email}`}>{email}</a> : <Dato dato={clinica.email} />}</p>
             </div>
           </div>
 
@@ -65,42 +77,45 @@ const t = (key: string, fallback: string) => c[key] ?? fallback;
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div>
-              <strong>Horario</strong>
-              <p>{t('contacto_horario_semana', 'Lunes a Viernes: 9:00 – 20:00')}</p>
-              <p>{t('contacto_horario_sabado', 'Sábados: 10:00 – 14:00')}</p>
-              <p>Urgencias: 24 horas</p>
+              <h3>Horario</h3>
+              <p><Dato dato={clinica.horario.semana} /></p>
+              <p><Dato dato={clinica.horario.sabado} /></p>
+              <p><Dato dato={clinica.horario.domingo} /></p>
             </div>
           </div>
+
         </div>
 
-        <form id="contact-form" class="form reveal">
-          <h2>Envíanos un mensaje</h2>
+        <form id="contact-form" class="form reveal" novalidate>
+          <h2>Escríbenos un mensaje</h2>
+          <p class="form__intro">Cuéntanos qué necesitas y te contestamos lo antes posible.</p>
 
-          <div class="form__group">
-            <label for="nombre">Nombre</label>
-            <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required />
+          <div class="form-field">
+            <label for="nombre">Tu nombre</label>
+            <input type="text" id="nombre" name="nombre" autocomplete="name" required />
           </div>
 
-          <div class="form__group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" placeholder="tu@email.com" required />
+          <div class="form-field">
+            <label for="email">Tu correo</label>
+            <input type="email" id="email" name="email" autocomplete="email" required />
           </div>
 
-          <div class="form__group">
+          <div class="form-field">
             <label for="asunto">Asunto</label>
-            <input type="text" id="asunto" name="asunto" placeholder="Motivo de tu mensaje" required />
+            <input type="text" id="asunto" name="asunto" required />
           </div>
 
-          <div class="form__group">
+          <div class="form-field">
             <label for="mensaje-text">Mensaje</label>
-            <textarea id="mensaje-text" name="mensaje" rows="5" placeholder="Escribe tu mensaje aquí..." required></textarea>
+            <textarea id="mensaje-text" name="mensaje" rows="5" required></textarea>
           </div>
 
-          <button type="submit" class="form__submit">
+          <button type="submit" class="btn btn--primary form__submit">
             Enviar mensaje
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
-          <div id="contact-msg" class="form__message" aria-live="polite"></div>
+
+          <p id="contact-msg" class="form__message" role="status" aria-live="polite"></p>
         </form>
       </div>
     </div>
@@ -110,25 +125,45 @@ const t = (key: string, fallback: string) => c[key] ?? fallback;
 <script>
   import { supabase } from '../lib/supabase';
 
-  const form = document.getElementById('contact-form') as HTMLFormElement;
-  const msg = document.getElementById('contact-msg') as HTMLDivElement;
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const msg = document.getElementById('contact-msg') as HTMLParagraphElement | null;
+  const boton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(form);
+  form?.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const datos = new FormData(form);
+    const textoOriginal = boton?.textContent ?? '';
+
+    if (boton) {
+      boton.disabled = true;
+      boton.textContent = 'Enviando…';
+    }
 
     const { error } = await supabase.from('contacto_mensajes').insert({
-      nombre: formData.get('nombre'),
-      email: formData.get('email'),
-      asunto: formData.get('asunto'),
-      mensaje: formData.get('mensaje'),
+      nombre: datos.get('nombre'),
+      email: datos.get('email'),
+      asunto: datos.get('asunto'),
+      mensaje: datos.get('mensaje'),
     });
 
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent = textoOriginal;
+    }
+
+    if (!msg) return;
+
     if (error) {
-      msg.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg> Error al enviar. Inténtalo de nuevo.';
+      msg.textContent = 'No hemos podido enviar el mensaje. Vuelve a intentarlo o llámanos por teléfono.';
       msg.className = 'form__message form__message--error';
     } else {
-      msg.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ¡Mensaje enviado! Te responderemos pronto.';
+      msg.textContent = 'Mensaje enviado. Te contestamos lo antes posible.';
       msg.className = 'form__message form__message--success';
       form.reset();
     }
@@ -137,47 +172,47 @@ const t = (key: string, fallback: string) => c[key] ?? fallback;
 
 <style>
   .page-hero {
-    padding: var(--space-4xl) 0 var(--space-3xl);
+    padding: var(--space-7) 0 var(--space-5);
     text-align: center;
-    background:
-      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45, 106, 79, 0.06) 0%, transparent 70%);
+    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(231, 127, 74, 0.08) 0%, transparent 70%);
+  }
+
+  /* La cabecera ya deja aire suficiente: la sección no vuelve a separarse */
+  .contact {
+    padding-top: 0;
   }
 
   .page-hero h1 {
-    font-size: clamp(2rem, 4vw, 2.75rem);
-    font-weight: 800;
-    letter-spacing: -0.03em;
+    font-size: var(--text-3xl);
     color: var(--color-text);
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-2);
   }
 
   .page-hero p {
-    font-size: 1.1rem;
+    font-size: var(--text-lg);
     color: var(--color-text-secondary);
-    max-width: 460px;
+    max-width: 52ch;
     margin: 0 auto;
   }
 
   .contact__grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-3xl);
+    gap: var(--space-7);
     align-items: start;
   }
 
   .contact__info h2,
   .form h2 {
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: var(--text-xl);
     color: var(--color-text);
-    margin-bottom: var(--space-xl);
-    letter-spacing: -0.02em;
+    margin-bottom: var(--space-4);
   }
 
   .contact__item {
     display: flex;
-    gap: var(--space-md);
-    margin-bottom: var(--space-xl);
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
   }
 
   .contact__icon {
@@ -186,122 +221,99 @@ const t = (key: string, fallback: string) => c[key] ?? fallback;
     justify-content: center;
     width: 44px;
     height: 44px;
-    background: var(--color-primary-50);
-    color: var(--color-primary);
-    border-radius: var(--radius-md);
     flex-shrink: 0;
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+    border-radius: var(--radius);
   }
 
-  .contact__item strong {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 600;
+  .contact__item h3 {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
     color: var(--color-text);
-    margin-bottom: 2px;
+    margin-bottom: var(--space-1);
   }
 
   .contact__item p {
-    margin: 0;
-    font-size: 0.9rem;
     color: var(--color-text-secondary);
+    font-size: var(--text-sm);
     line-height: 1.6;
   }
 
+  .contact__item a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .contact__item a:hover {
+    color: var(--color-primary-dark);
+  }
+
+  /* ==========================================
+     Formulario
+     ========================================== */
   .form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
     background: var(--color-surface);
-    padding: var(--space-2xl);
-    border-radius: var(--radius-xl);
     border: 1px solid var(--color-border-light);
+    border-radius: var(--radius);
+    padding: var(--space-4);
     box-shadow: var(--shadow-md);
   }
 
-  .form__group {
-    margin-bottom: var(--space-lg);
+  .form h2 {
+    margin-bottom: 0;
   }
 
-  label {
-    display: block;
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--color-text);
-    margin-bottom: var(--space-sm);
-  }
-
-  input, textarea {
-    width: 100%;
-    padding: 0.7rem 0.875rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-size: 0.95rem;
-    font-family: inherit;
-    box-sizing: border-box;
-    background: var(--color-background);
-    color: var(--color-text);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-  }
-
-  input::placeholder, textarea::placeholder {
-    color: var(--color-text-muted);
-  }
-
-  input:focus, textarea:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.12);
-    background: var(--color-surface);
+  .form__intro {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin-top: calc(var(--space-2) * -1);
   }
 
   .form__submit {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 0.85rem;
-    background: var(--color-primary);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-  }
-
-  .form__submit:hover {
-    background: var(--color-primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(45, 106, 79, 0.25);
+    align-self: flex-start;
+    margin-top: var(--space-1);
   }
 
   .form__message {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    margin-top: var(--space-lg);
-    padding: var(--space-md) var(--space-lg);
-    border-radius: var(--radius-md);
-    font-weight: 500;
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    border-radius: var(--radius);
   }
 
-  .form__message:empty { display: none; }
-
   .form__message--success {
-    background: #f0fdf4;
-    color: #166534;
-    border: 1px solid #bbf7d0;
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-success-soft);
+    color: var(--color-success);
   }
 
   .form__message--error {
-    background: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-error-soft);
+    color: var(--color-error);
   }
 
-  @media (max-width: 768px) {
+  /* ==========================================
+     Adaptación a pantallas pequeñas
+     ========================================== */
+  @media (max-width: 880px) {
     .contact__grid {
       grid-template-columns: 1fr;
+      gap: var(--space-6);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .form__submit {
+      align-self: stretch;
     }
   }
 </style>

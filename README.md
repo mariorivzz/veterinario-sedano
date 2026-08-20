@@ -1,62 +1,100 @@
-# Astro Starter Kit: Blog
+# Clínica Veterinaria Sedano
+
+Web de la clínica, con panel de administración para gestionar los mensajes de
+contacto y los textos de las páginas.
+
+**Astro 6** · **Supabase** (base de datos y acceso al panel) · **Vercel** (despliegue)
+· CSS propio con variables, sin frameworks de estilos.
+
+Es una web informativa: no tiene reservas online ni avisos de urgencias.
+El contacto es por teléfono, por el formulario o por el chat de ayuda.
+
+## Antes de empezar
+
+Hace falta Node 22.12 o superior.
 
 ```sh
-npm create astro@latest -- --template blog
+npm install
+cp .env.example .env   # y rellena las claves
+npm run dev            # http://localhost:4321
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+### Variables de entorno
 
-Features:
+Copia `.env.example` a `.env` y rellena:
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and Open Graph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
+| Variable | De dónde sale |
+| :-- | :-- |
+| `PUBLIC_SUPABASE_URL` | Supabase → Settings → API |
+| `PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API (la *anon public*) |
+| `GROQ_API_KEY` | console.groq.com — solo para el chat de ayuda |
 
-## 🚀 Project Structure
+Sin las dos primeras, la portada y la página de contacto dan error.
 
-Inside of your Astro project, you'll see the following folders and files:
+## Datos de la clínica
+
+Dirección, teléfono, correo y horarios **no** están repartidos por el código:
+viven todos en [`src/config/clinica.ts`](src/config/clinica.ts).
+
+Están tomados de la web actual de la clínica, clinicaveterinariasedano.com.
+Si alguno cambia, cámbialo ahí y se actualiza el sitio entero de una vez.
+
+Lo que se ponga como `PENDIENTE` se muestra en la web como «Por confirmar» en
+lugar de inventar un dato.
+
+## Base de datos
+
+En el editor SQL de Supabase, ejecuta una sola vez:
+
+1. `supabase-setup.sql` — tabla de mensajes de contacto y sus permisos
+2. `supabase-contenidos.sql` — tabla de textos editables y sus valores iniciales
+
+Después crea el usuario del panel en Supabase → Authentication → Users → Add User.
+
+## Comandos
+
+| Comando | Qué hace |
+| :-- | :-- |
+| `npm run dev` | Arranca el servidor local en `localhost:4321` |
+| `npm run build` | Genera el sitio para producción |
+| `npm run preview` | Previsualiza lo generado, antes de desplegar |
+| `npx astro check` | Revisa los tipos de TypeScript |
+
+## Estructura
 
 ```text
-├── public/
-├── src/
-│   ├── components/
-│   ├── content/
-│   ├── layouts/
-│   └── pages/
-├── astro.config.mjs
-├── README.md
-├── package.json
-└── tsconfig.json
+src/
+├── components/     Header, Footer, tarjeta de servicio, chat
+├── config/         clinica.ts — datos reales de la clínica
+├── layouts/        Layout (web pública) y AdminLayout (panel)
+├── lib/            Cliente de Supabase y control de acceso al panel
+├── pages/
+│   ├── admin/      Panel: mensajes y textos editables
+│   └── api/        Endpoint del chat
+└── styles/         global.css — el sistema de diseño completo
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Sistema de diseño
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Todo sale de las variables de [`src/styles/global.css`](src/styles/global.css).
+Si tocas algo, tócalo ahí:
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+- **Color**: el naranja del logotipo, `#e77f4a`, sobre texto azul pizarra
+  `#1d2a3b` y fondo blanco cálido `#fdfbf8`. Ojo: `--color-brand` (`#e77f4a`) es
+  solo para rellenos y gráficos, porque sobre blanco da 2.8:1. Todo lo que lleve
+  texto usa `--color-primary` (`#b85a28`), el mismo naranja rebajado hasta 4.6:1.
+- **Tipografía**: Open Sans, la misma que usa la web actual de la clínica.
+- **Espaciado**: `--space-1` a `--space-8`, todos múltiplos de 8&nbsp;px salvo el
+  primero (4&nbsp;px, para ajustes ópticos dentro de un componente).
+- **Radios**: solo dos, `--radius` (10&nbsp;px) y `--radius-round`.
+- **Sombras**: `--shadow-sm`, `--shadow-md` y `--shadow-lg`, suaves y tintadas
+  hacia el color del texto.
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Despliegue
 
-## 🧞 Commands
+Vercel despliega solo con cada `push` a `main`. Las variables de entorno se
+configuran en el panel de Vercel (Settings → Environment Variables), no en el
+repositorio.
 
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+Cuando haya dominio propio, cámbialo en `site` dentro de
+[`astro.config.mjs`](astro.config.mjs) para que el sitemap apunte bien.

@@ -1,434 +1,180 @@
 ---
 export const prerender = false;
 
+import AdminLayout from '../../layouts/AdminLayout.astro';
 import { supabase } from '../../lib/supabase';
+import { requireAdmin } from '../../lib/adminAuth';
 
-const { cookies, redirect, request } = Astro;
+const { user, redirect } = await requireAdmin(Astro);
+if (redirect) return redirect;
 
-const token = cookies.get('sb-access-token')?.value;
-const refresh = cookies.get('sb-refresh-token')?.value;
+let mensajeOk = '';
+let mensajeError = '';
 
-if (!token || !refresh) {
-  return redirect('/admin/login');
-}
+// Guardar los textos editados
+if (Astro.request.method === 'POST') {
+  const datos = await Astro.request.formData();
+  const cambios: { clave: string; valor: string }[] = [];
 
-const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-  access_token: token,
-  refresh_token: refresh,
-});
-
-if (sessionError || !sessionData.session) {
-  cookies.delete('sb-access-token', { path: '/' });
-  cookies.delete('sb-refresh-token', { path: '/' });
-  return redirect('/admin/login');
-}
-
-const user = sessionData.session.user;
-
-let successMsg = '';
-let errorMsg = '';
-
-// Handle POST — update content
-if (request.method === 'POST') {
-  const formData = await request.formData();
-  const updates: { clave: string; valor: string }[] = [];
-
-  for (const [key, value] of formData.entries()) {
-    if (key.startsWith('contenido_')) {
-      const clave = key.replace('contenido_', '');
-      updates.push({ clave, valor: String(value) });
+  for (const [campo, valor] of datos.entries()) {
+    if (campo.startsWith('contenido_')) {
+      cambios.push({ clave: campo.replace('contenido_', ''), valor: String(valor) });
     }
   }
 
-  if (updates.length > 0) {
-    let hasError = false;
-    for (const { clave, valor } of updates) {
+  if (cambios.length > 0) {
+    for (const { clave, valor } of cambios) {
       const { error } = await supabase
         .from('contenidos')
         .update({ valor, updated_at: new Date().toISOString() })
         .eq('clave', clave);
+
       if (error) {
-        hasError = true;
-        errorMsg = `Error actualizando "${clave}": ${error.message}`;
+        mensajeError = `No se ha podido guardar "${clave}". Vuelve a intentarlo.`;
         break;
       }
     }
-    if (!hasError) {
-      successMsg = 'Contenidos actualizados correctamente.';
+
+    if (!mensajeError) {
+      mensajeOk = 'Cambios guardados. Ya se ven en la web.';
     }
   }
 }
 
-// Fetch all content, ordered by section
 const { data: contenidos } = await supabase
   .from('contenidos')
   .select('*')
   .order('seccion')
   .order('clave');
 
-// Group by section
-const secciones: Record<string, typeof contenidos> = {};
-const seccionLabels: Record<string, string> = {
-  hero: '🏠 Hero (Inicio)',
-  stats: '📊 Estadísticas',
-  servicios: '🩺 Servicios',
-  why: '⭐ Por qué elegirnos',
-  cta: '📣 Llamada a la acción',
-  contacto: '📍 Contacto',
-  general: '📝 General',
+const nombresSeccion: Record<string, string> = {
+  hero: 'Portada',
+  stats: 'Cifras',
+  servicios: 'Servicios',
+  why: 'Por qué elegirnos',
+  cta: 'Llamada final',
+  contacto: 'Contacto',
+  general: 'General',
 };
 
+const secciones: Record<string, any[]> = {};
 if (contenidos) {
   for (const item of contenidos) {
-    if (!secciones[item.seccion]) {
-      secciones[item.seccion] = [];
-    }
-    secciones[item.seccion]!.push(item);
+    (secciones[item.seccion] ??= []).push(item);
   }
 }
 ---
 
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <title>Contenidos | Admin VetCare</title>
-  <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --primary: #2d6a4f;
-      --primary-light: #40916c;
-      --primary-dark: #1b4332;
-      --primary-50: #f0fdf4;
-      --primary-200: #bbf7d0;
-      --bg: #f8faf9;
-      --surface: #ffffff;
-      --text: #1a1a2e;
-      --text-secondary: #5a5a6e;
-      --text-muted: #8a8a9a;
-      --border: #e5e7eb;
-      --border-light: #f0f0f5;
-      --radius: 12px;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
-    }
+<AdminLayout
+  title="Textos de la web"
+  subtitle="Cambia lo que se lee en las páginas públicas sin tocar código"
+  email={user.email ?? ''}
+>
+  {mensajeOk && <p class="aviso aviso--ok" role="status">{mensajeOk}</p>}
+  {mensajeError && <p class="aviso aviso--error" role="alert">{mensajeError}</p>}
 
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    .layout { display: flex; min-height: 100vh; }
-
-    .sidebar {
-      width: 260px;
-      background: var(--surface);
-      border-right: 1px solid var(--border-light);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-
-    .sidebar__logo {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--primary);
-      text-decoration: none;
-      margin-bottom: 2rem;
-      padding: 0 0.5rem;
-    }
-
-    .sidebar__nav { flex: 1; }
-
-    .sidebar__link {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.7rem 0.75rem;
-      border-radius: 8px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin-bottom: 0.25rem;
-      transition: all 150ms ease;
-    }
-
-    .sidebar__link:hover { background: var(--primary-50); color: var(--text); }
-    .sidebar__link.active { background: var(--primary-50); color: var(--primary); font-weight: 600; }
-    .sidebar__link svg { flex-shrink: 0; }
-
-    .sidebar__footer { border-top: 1px solid var(--border-light); padding-top: 1rem; }
-    .sidebar__user {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      padding: 0 0.5rem;
-      margin-bottom: 0.75rem;
-      word-break: break-all;
-    }
-
-    .sidebar__logout {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 150ms ease;
-    }
-    .sidebar__logout:hover { border-color: #dc2626; color: #dc2626; }
-
-    .main { flex: 1; padding: 2rem; overflow-x: auto; }
-    .main__header { margin-bottom: 2rem; }
-    .main__header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
-    .main__header p { color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem; }
-
-    /* Alerts */
-    .alert {
-      padding: 0.85rem 1.25rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .alert--success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-    .alert--error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-
-    /* Section groups */
-    .section-group {
-      background: var(--surface);
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius);
-      margin-bottom: 1.5rem;
-      overflow: hidden;
-    }
-
-    .section-group__header {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border-light);
-      background: var(--bg);
-      font-weight: 650;
-      font-size: 0.95rem;
-    }
-
-    .section-group__body { padding: 1.25rem; }
-
-    /* Form fields */
-    .field { margin-bottom: 1.25rem; }
-    .field:last-child { margin-bottom: 0; }
-
-    .field__label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.4rem;
-    }
-
-    .field__key {
-      display: inline-block;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      background: var(--bg);
-      padding: 0.1rem 0.5rem;
-      border-radius: 4px;
-      margin-bottom: 0.4rem;
-      font-family: monospace;
-    }
-
-    .field__input {
-      width: 100%;
-      padding: 0.65rem 0.85rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--surface);
-      transition: border-color 150ms ease, box-shadow 150ms ease;
-    }
-
-    .field__input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
-    }
-
-    textarea.field__input {
-      resize: vertical;
-      min-height: 80px;
-    }
-
-    /* Submit */
-    .form__actions {
-      position: sticky;
-      bottom: 0;
-      background: var(--surface);
-      border-top: 1px solid var(--border-light);
-      padding: 1rem 2rem;
-      margin: 0 -2rem;
-      display: flex;
-      justify-content: flex-end;
-      z-index: 10;
-    }
-
-    .btn-save {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.7rem 1.5rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background 150ms ease;
-    }
-    .btn-save:hover { background: var(--primary-dark); }
-
-    a { color: inherit; text-decoration: none; }
-
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { padding: 1rem; }
-      .form__actions { margin: 0 -1rem; padding: 1rem; }
-    }
-  </style>
-</head>
-<body>
-  <div class="layout">
-    <aside class="sidebar">
-      <a href="/admin" class="sidebar__logo">
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <circle cx="10" cy="8" r="3.5" fill="currentColor" opacity="0.8"/>
-          <circle cx="22" cy="8" r="3.5" fill="currentColor" opacity="0.8"/>
-          <circle cx="5" cy="16" r="3" fill="currentColor" opacity="0.6"/>
-          <circle cx="27" cy="16" r="3" fill="currentColor" opacity="0.6"/>
-          <ellipse cx="16" cy="22" rx="8" ry="7" fill="currentColor"/>
-        </svg>
-        VetCare
-      </a>
-
-      <nav class="sidebar__nav">
-        <a href="/admin" class="sidebar__link">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Panel principal
-        </a>
-        <a href="/admin/citas" class="sidebar__link">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Citas
-        </a>
-        <a href="/admin/mensajes" class="sidebar__link">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Mensajes
-        </a>
-        <a href="/admin/contenidos" class="sidebar__link active">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Contenidos
-        </a>
-        <a href="/" class="sidebar__link" target="_blank">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
-          Ver sitio web
-        </a>
-      </nav>
-
-      <div class="sidebar__footer">
-        <div class="sidebar__user">{user.email}</div>
-        <form method="POST" action="/admin/logout">
-          <button type="submit" class="sidebar__logout">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-            Cerrar sesión
-          </button>
-        </form>
-      </div>
-    </aside>
-
-    <main class="main">
-      <div class="main__header">
-        <h1>Contenidos del sitio</h1>
-        <p>Edita los textos que aparecen en las páginas públicas de la web</p>
-      </div>
-
-      {successMsg && <div class="alert alert--success">✓ {successMsg}</div>}
-      {errorMsg && <div class="alert alert--error">✕ {errorMsg}</div>}
-
-      {contenidos && contenidos.length > 0 ? (
-        <form method="POST">
-          {Object.entries(secciones).map(([seccion, items]) => (
-            <div class="section-group">
-              <div class="section-group__header">
-                {seccionLabels[seccion] || seccion}
+  {contenidos && contenidos.length > 0 ? (
+    <form method="POST">
+      {Object.entries(secciones).map(([seccion, items]) => (
+        <section class="grupo">
+          <h2 class="grupo__titulo">{nombresSeccion[seccion] ?? seccion}</h2>
+          <div class="grupo__campos">
+            {items.map((item: any) => (
+              <div class="form-field">
+                <label for={`contenido_${item.clave}`}>{item.etiqueta}</label>
+                {item.tipo === 'textarea' ? (
+                  <textarea id={`contenido_${item.clave}`} name={`contenido_${item.clave}`} rows="3">{item.valor}</textarea>
+                ) : (
+                  <input type="text" id={`contenido_${item.clave}`} name={`contenido_${item.clave}`} value={item.valor} />
+                )}
+                <span class="clave">{item.clave}</span>
               </div>
-              <div class="section-group__body">
-                {items!.map((item) => (
-                  <div class="field">
-                    <label class="field__label" for={`contenido_${item.clave}`}>
-                      {item.etiqueta}
-                    </label>
-                    <span class="field__key">{item.clave}</span>
-                    {item.tipo === 'textarea' ? (
-                      <textarea
-                        class="field__input"
-                        id={`contenido_${item.clave}`}
-                        name={`contenido_${item.clave}`}
-                        rows="3"
-                      >{item.valor}</textarea>
-                    ) : (
-                      <input
-                        class="field__input"
-                        type="text"
-                        id={`contenido_${item.clave}`}
-                        name={`contenido_${item.clave}`}
-                        value={item.valor}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </section>
+      ))}
 
-          <div class="form__actions">
-            <button type="submit" class="btn-save">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Guardar cambios
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div class="section-group">
-          <div class="section-group__body" style="text-align: center; padding: 3rem; color: var(--text-muted);">
-            <p>No hay contenidos configurados. Ejecuta el archivo <code>supabase-contenidos.sql</code> en el SQL Editor de Supabase para crear la tabla e insertar los datos iniciales.</p>
-          </div>
-        </div>
-      )}
-    </main>
-  </div>
-</body>
-</html>
+      <div class="acciones">
+        <button type="submit" class="btn btn--primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Guardar cambios
+        </button>
+      </div>
+    </form>
+  ) : (
+    <div class="panel">
+      <p class="vacio">
+        Todavía no hay textos que editar. Ejecuta <code>supabase-contenidos.sql</code> en el editor SQL
+        de Supabase para crear la tabla y sus valores iniciales.
+      </p>
+    </div>
+  )}
+</AdminLayout>
+
+<style>
+  .aviso {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+  }
+
+  .aviso--ok {
+    background: var(--color-success-soft);
+    color: var(--color-success);
+  }
+
+  .aviso--error {
+    background: var(--color-error-soft);
+    color: var(--color-error);
+  }
+
+  .grupo {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-3);
+    overflow: hidden;
+  }
+
+  .grupo__titulo {
+    padding: var(--space-3);
+    background: var(--color-background);
+    border-bottom: 1px solid var(--color-border-light);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+  }
+
+  .grupo__campos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .clave {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  }
+
+  .acciones {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--space-3) 0;
+    background: linear-gradient(to top, var(--color-background) 60%, transparent);
+  }
+
+  code {
+    font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+    font-size: 0.9em;
+    background: var(--color-background);
+    padding: 2px 6px;
+    border-radius: var(--radius);
+  }
+</style>

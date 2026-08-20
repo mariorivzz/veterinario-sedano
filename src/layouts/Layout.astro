@@ -2,6 +2,7 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ChatWidget from '../components/ChatWidget.astro';
+import { clinica } from '../config/clinica';
 import '../styles/global.css';
 
 interface Props {
@@ -9,7 +10,13 @@ interface Props {
   description?: string;
 }
 
-const { title, description = 'Clínica veterinaria profesional. Cuidamos a tu mascota con amor y dedicación.' } = Astro.props;
+const {
+  title,
+  description = 'Clínica veterinaria en Salamanca. Consultas, vacunas, análisis, odontología y cirugía para tu mascota.',
+} = Astro.props;
+
+const tituloCompleto = `${title} | ${clinica.nombre}`;
+const urlCanonica = new URL(Astro.url.pathname, Astro.site ?? Astro.url);
 ---
 
 <!doctype html>
@@ -18,15 +25,25 @@ const { title, description = 'Clínica veterinaria profesional. Cuidamos a tu ma
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#e77f4a" />
+    <link rel="canonical" href={urlCanonica} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <title>{title} | VetCare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={clinica.nombre} />
+    <meta property="og:title" content={tituloCompleto} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={urlCanonica} />
+
+    <title>{tituloCompleto}</title>
   </head>
   <body>
     <Header />
-    <main>
+    <main id="contenido">
       <slot />
     </main>
     <Footer />

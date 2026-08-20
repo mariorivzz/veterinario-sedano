@@ -1,0 +1,16 @@
+---
+/**
+ * Muestra un dato de la clínica. Si todavía no está confirmado,
+ * en su lugar aparece una marca "Por confirmar" en vez de un dato inventado.
+ */
+import { valor } from '../config/clinica';
+
+interface Props {
+  dato: string;
+}
+
+const { dato } = Astro.props;
+const texto = valor(dato);
+---
+
+{texto ? texto : <span class="pendiente">Por confirmar</span>}

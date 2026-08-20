@@ -1,6 +1,10 @@
 -- ==========================================
--- Tabla de contenidos editables
--- Ejecutar en Supabase SQL Editor
+-- Tabla de textos editables desde el panel
+-- Ejecutar en el editor SQL de Supabase
+--
+-- Aquí van SOLO los textos de marketing de la web.
+-- Los datos de contacto (dirección, teléfono, horario) NO están aquí:
+-- viven en src/config/clinica.ts, para tener una única fuente de verdad.
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS contenidos (
@@ -14,55 +18,60 @@ CREATE TABLE IF NOT EXISTS contenidos (
 
 ALTER TABLE contenidos ENABLE ROW LEVEL SECURITY;
 
--- Cualquiera puede leer (las páginas públicas necesitan esto)
+-- Cualquiera puede leer: las páginas públicas lo necesitan
 CREATE POLICY "Allow public reads on contenidos"
   ON contenidos FOR SELECT TO anon
   USING (true);
 
--- Solo admin puede modificar
+-- Solo quien ha iniciado sesión puede modificar
 CREATE POLICY "Allow authenticated full access on contenidos"
   ON contenidos FOR ALL TO authenticated
   USING (true) WITH CHECK (true);
 
 -- ==========================================
--- Datos iniciales (seed)
+-- Textos iniciales
 -- ==========================================
 
 INSERT INTO contenidos (clave, valor, seccion, etiqueta, tipo) VALUES
-  -- Hero
-  ('hero_badge', 'Clínica veterinaria profesional', 'hero', 'Badge del hero', 'text'),
-  ('hero_titulo', 'Cuidamos la salud de tu mejor amigo', 'hero', 'Título principal', 'text'),
-  ('hero_subtitulo', 'Equipo veterinario con más de 15 años de experiencia en el cuidado integral de mascotas. Consultas, cirugía, urgencias y mucho más.', 'hero', 'Subtítulo', 'textarea'),
-  
-  -- Stats
-  ('stats_experiencia', '15+', 'stats', 'Años de experiencia', 'text'),
-  ('stats_mascotas', '5,000+', 'stats', 'Mascotas atendidas', 'text'),
-  ('stats_especialidades', '8', 'stats', 'Especialidades', 'text'),
-  ('stats_urgencias', '24/7', 'stats', 'Urgencias', 'text'),
+  -- Portada
+  ('hero_badge', 'Clínica veterinaria', 'hero', 'Etiqueta de portada', 'text'),
+  ('hero_titulo', 'Cuidamos a tu mascota como si fuera nuestra', 'hero', 'Título principal', 'text'),
+  ('hero_subtitulo', 'Revisiones, vacunas, cirugía y urgencias. Te explicamos siempre qué le pasa a tu animal y qué vamos a hacer, sin palabras raras.', 'hero', 'Texto de portada', 'textarea'),
 
-  -- Sección servicios
-  ('servicios_badge', 'Lo que hacemos', 'servicios', 'Badge servicios', 'text'),
-  ('servicios_titulo', 'Nuestros servicios', 'servicios', 'Título servicios', 'text'),
-  ('servicios_subtitulo', 'Atención integral y especializada para el bienestar de tu mascota', 'servicios', 'Subtítulo servicios', 'text'),
+  -- Servicios
+  ('servicios_badge', 'Lo que hacemos', 'servicios', 'Etiqueta de sección', 'text'),
+  ('servicios_titulo', 'Nuestros servicios', 'servicios', 'Título de sección', 'text'),
+  ('servicios_subtitulo', 'Todo lo que tu mascota necesita, en un mismo sitio', 'servicios', 'Texto de sección', 'text'),
 
-  -- Sección por qué elegirnos
-  ('why_badge', 'Por qué elegirnos', 'why', 'Badge sección', 'text'),
-  ('why_titulo', 'Para nosotros, tu mascota es familia', 'why', 'Título sección', 'text'),
-  ('why_1_titulo', 'Equipo certificado', 'why', 'Título ventaja 1', 'text'),
-  ('why_1_desc', 'Veterinarios colegiados con formación continua y especializaciones de alto nivel.', 'why', 'Descripción ventaja 1', 'textarea'),
-  ('why_2_titulo', 'Urgencias 24 horas', 'why', 'Título ventaja 2', 'text'),
-  ('why_2_desc', 'Disponibles todos los días del año para cualquier emergencia de tu mascota.', 'why', 'Descripción ventaja 2', 'textarea'),
-  ('why_3_titulo', 'Trato con cariño', 'why', 'Título ventaja 3', 'text'),
-  ('why_3_desc', 'Entorno tranquilo y amable donde tu mascota se sentirá segura y cómoda.', 'why', 'Descripción ventaja 3', 'textarea'),
+  -- Por qué elegirnos
+  ('why_badge', 'Por qué elegirnos', 'why', 'Etiqueta de sección', 'text'),
+  ('why_titulo', 'Para nosotros, tu mascota es de la familia', 'why', 'Título de sección', 'text'),
+  ('why_1_titulo', 'Veterinarios colegiados', 'why', 'Título del motivo 1', 'text'),
+  ('why_1_desc', 'Todo el equipo está colegiado y se sigue formando cada año.', 'why', 'Texto del motivo 1', 'textarea'),
+  ('why_2_titulo', 'Te lo explicamos claro', 'why', 'Título del motivo 2', 'text'),
+  ('why_2_desc', 'Antes de hacer nada te contamos qué le pasa, qué cuesta y qué opciones hay.', 'why', 'Texto del motivo 2', 'textarea'),
+  ('why_3_titulo', 'Con calma y con mimo', 'why', 'Título del motivo 3', 'text'),
+  ('why_3_desc', 'Vamos al ritmo del animal para que la visita le asuste lo menos posible.', 'why', 'Texto del motivo 3', 'textarea'),
 
-  -- CTA
-  ('cta_titulo', '¿Tu mascota necesita atención?', 'cta', 'Título CTA', 'text'),
-  ('cta_subtitulo', 'Reserva tu cita online en menos de un minuto. Sin esperas, sin complicaciones.', 'cta', 'Subtítulo CTA', 'textarea'),
+  -- Llamada final
+  ('cta_titulo', '¿Tu mascota necesita que la veamos?', 'cta', 'Título de la llamada final', 'text'),
+  ('cta_subtitulo', 'Llámanos y te decimos cuándo podemos atenderla. Si es urgente, dilo al llamar.', 'cta', 'Texto de la llamada final', 'textarea'),
 
-  -- Contacto
-  ('contacto_direccion', 'Calle Ejemplo 123, Ciudad, País', 'contacto', 'Dirección', 'text'),
-  ('contacto_telefono', '(+34) 600 123 456', 'contacto', 'Teléfono', 'text'),
-  ('contacto_email', 'info@vetcare.com', 'contacto', 'Email', 'text'),
-  ('contacto_horario_semana', 'Lunes a Viernes: 9:00 – 20:00', 'contacto', 'Horario entre semana', 'text'),
-  ('contacto_horario_sabado', 'Sábados: 10:00 – 14:00', 'contacto', 'Horario sábados', 'text')
+  -- Página de contacto
+  ('contacto_titulo', 'Estamos aquí para ayudarte', 'contacto', 'Título de la página', 'text'),
+  ('contacto_subtitulo', 'Llámanos, escríbenos o pásate por la clínica. Te atendemos encantados.', 'contacto', 'Texto de la página', 'textarea')
 ON CONFLICT (clave) DO NOTHING;
+
+-- ==========================================
+-- Si vienes de la versión anterior, esto borra los textos
+-- que ya no se usan (cifras inventadas y datos de contacto).
+-- ==========================================
+
+DELETE FROM contenidos WHERE seccion = 'stats';
+DELETE FROM contenidos WHERE clave IN (
+  'contacto_direccion',
+  'contacto_telefono',
+  'contacto_email',
+  'contacto_horario_semana',
+  'contacto_horario_sabado'
+);

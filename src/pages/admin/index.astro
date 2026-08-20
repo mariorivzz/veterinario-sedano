@@ -1,374 +1,119 @@
 ---
 export const prerender = false;
 
+import AdminLayout from '../../layouts/AdminLayout.astro';
 import { supabase } from '../../lib/supabase';
+import { requireAdmin, formatearFecha } from '../../lib/adminAuth';
 
-const { cookies, redirect } = Astro;
+const { user, redirect } = await requireAdmin(Astro);
+if (redirect) return redirect;
 
-const token = cookies.get('sb-access-token')?.value;
-const refresh = cookies.get('sb-refresh-token')?.value;
+const { count: mensajesCount } = await supabase
+  .from('contacto_mensajes')
+  .select('*', { count: 'exact', head: true });
 
-if (!token || !refresh) {
-  return redirect('/admin/login');
-}
-
-const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-  access_token: token,
-  refresh_token: refresh,
-});
-
-if (sessionError || !sessionData.session) {
-  cookies.delete('sb-access-token', { path: '/' });
-  cookies.delete('sb-refresh-token', { path: '/' });
-  return redirect('/admin/login');
-}
-
-const user = sessionData.session.user;
-
-// Fetch stats
-const { count: citasCount } = await supabase.from('citas').select('*', { count: 'exact', head: true });
-const { count: mensajesCount } = await supabase.from('contacto_mensajes').select('*', { count: 'exact', head: true });
-
-// Fetch recent citas
-const { data: citas } = await supabase
-  .from('citas')
-  .select('*')
-  .order('created_at', { ascending: false })
-  .limit(10);
-
-// Fetch recent messages
 const { data: mensajes } = await supabase
   .from('contacto_mensajes')
   .select('*')
   .order('created_at', { ascending: false })
   .limit(5);
 
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('es-ES', {
-    day: 'numeric', month: 'short', year: 'numeric'
-  });
-};
+const { count: contenidosCount } = await supabase
+  .from('contenidos')
+  .select('*', { count: 'exact', head: true });
 ---
 
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <title>Panel Admin | VetCare</title>
-  <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --primary: #2d6a4f;
-      --primary-light: #40916c;
-      --primary-dark: #1b4332;
-      --primary-50: #f0fdf4;
-      --primary-200: #bbf7d0;
-      --bg: #f8faf9;
-      --surface: #ffffff;
-      --text: #1a1a2e;
-      --text-secondary: #5a5a6e;
-      --text-muted: #8a8a9a;
-      --border: #e5e7eb;
-      --border-light: #f0f0f5;
-      --radius: 12px;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
-    }
-
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    /* Sidebar */
-    .layout { display: flex; min-height: 100vh; }
-
-    .sidebar {
-      width: 260px;
-      background: var(--surface);
-      border-right: 1px solid var(--border-light);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-
-    .sidebar__logo {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--primary);
-      text-decoration: none;
-      margin-bottom: 2rem;
-      padding: 0 0.5rem;
-    }
-
-    .sidebar__nav { flex: 1; }
-
-    .sidebar__link {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.7rem 0.75rem;
-      border-radius: 8px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin-bottom: 0.25rem;
-      transition: all 150ms ease;
-    }
-
-    .sidebar__link:hover { background: var(--primary-50); color: var(--text); }
-    .sidebar__link.active { background: var(--primary-50); color: var(--primary); font-weight: 600; }
-    .sidebar__link svg { flex-shrink: 0; }
-
-    .sidebar__footer { border-top: 1px solid var(--border-light); padding-top: 1rem; }
-    .sidebar__user {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      padding: 0 0.5rem;
-      margin-bottom: 0.75rem;
-      word-break: break-all;
-    }
-
-    .sidebar__logout {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 150ms ease;
-    }
-    .sidebar__logout:hover { border-color: #dc2626; color: #dc2626; }
-
-    /* Main */
-    .main { flex: 1; padding: 2rem; overflow-x: auto; }
-    .main__header { margin-bottom: 2rem; }
-    .main__header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
-    .main__header p { color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem; }
-
-    /* Stats cards */
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-    }
-    .stat-card__label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
-    .stat-card__value { font-size: 2rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; margin-top: 0.25rem; }
-    .stat-card__icon { float: right; width: 40px; height: 40px; background: var(--primary-50); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-
-    /* Table */
-    .panel { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius); margin-bottom: 1.5rem; overflow: hidden; }
-    .panel__header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem; border-bottom: 1px solid var(--border-light); }
-    .panel__header h2 { font-size: 1rem; font-weight: 650; }
-    .panel__badge { background: var(--primary-50); color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
-
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding: 0.75rem 1.25rem; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg); border-bottom: 1px solid var(--border-light); }
-    td { padding: 0.85rem 1.25rem; font-size: 0.9rem; border-bottom: 1px solid var(--border-light); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(45, 106, 79, 0.02); }
-
-    .status { display: inline-flex; align-items: center; gap: 4px; padding: 0.15rem 0.6rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
-    .status--pending { background: #fef3c7; color: #92400e; }
-    .status--confirmed { background: #d1fae5; color: #065f46; }
-
-    /* Action buttons */
-    .actions { display: flex; gap: 0.5rem; }
-    .action-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--surface);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 150ms ease;
-    }
-    .action-btn:hover { border-color: var(--primary); color: var(--primary); }
-    .action-btn--danger:hover { border-color: #dc2626; color: #dc2626; }
-
-    /* Messages */
-    .msg-card { padding: 1.25rem; border-bottom: 1px solid var(--border-light); }
-    .msg-card:last-child { border-bottom: none; }
-    .msg-card__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-    .msg-card__name { font-weight: 600; font-size: 0.9rem; }
-    .msg-card__date { font-size: 0.75rem; color: var(--text-muted); }
-    .msg-card__subject { font-size: 0.85rem; color: var(--primary); font-weight: 500; margin-bottom: 0.25rem; }
-    .msg-card__text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
-
-    .empty { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem; }
-
-    a { color: inherit; text-decoration: none; }
-
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { padding: 1rem; }
-    }
-  </style>
-</head>
-<body>
-  <div class="layout">
-    <aside class="sidebar">
-      <a href="/admin" class="sidebar__logo">
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <circle cx="10" cy="8" r="3.5" fill="currentColor" opacity="0.8"/>
-          <circle cx="22" cy="8" r="3.5" fill="currentColor" opacity="0.8"/>
-          <circle cx="5" cy="16" r="3" fill="currentColor" opacity="0.6"/>
-          <circle cx="27" cy="16" r="3" fill="currentColor" opacity="0.6"/>
-          <ellipse cx="16" cy="22" rx="8" ry="7" fill="currentColor"/>
-        </svg>
-        VetCare
-      </a>
-
-      <nav class="sidebar__nav">
-        <a href="/admin" class="sidebar__link active">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Panel principal
-        </a>
-        <a href="/admin/citas" class="sidebar__link">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Citas
-        </a>
-        <a href="/admin/mensajes" class="sidebar__link">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Mensajes
-        </a>
-        <a href="/admin/contenidos" class="sidebar__link">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Contenidos
-        </a>
-        <a href="/" class="sidebar__link" target="_blank">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
-          Ver sitio web
-        </a>
-      </nav>
-
-      <div class="sidebar__footer">
-        <div class="sidebar__user">{user.email}</div>
-        <form method="POST" action="/admin/logout">
-          <button type="submit" class="sidebar__logout">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-            Cerrar sesión
-          </button>
-        </form>
+<AdminLayout
+  title="Panel principal"
+  subtitle={`Resumen de ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+  email={user.email ?? ''}
+>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-card__icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
       </div>
-    </aside>
+      <p class="stat-card__label">Mensajes recibidos</p>
+      <p class="stat-card__value">{mensajesCount ?? 0}</p>
+    </div>
 
-    <main class="main">
-      <div class="main__header">
-        <h1>Panel principal</h1>
-        <p>Bienvenido al panel de administración de VetCare</p>
+    <div class="stat-card">
+      <div class="stat-card__icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </div>
-
-      <div class="stats">
-        <div class="stat-card">
-          <div class="stat-card__icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <div class="stat-card__label">Citas totales</div>
-          <div class="stat-card__value">{citasCount ?? 0}</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card__icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </div>
-          <div class="stat-card__label">Mensajes</div>
-          <div class="stat-card__value">{mensajesCount ?? 0}</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card__icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          </div>
-          <div class="stat-card__label">Estado</div>
-          <div class="stat-card__value" style="color: var(--primary); font-size: 1.2rem;">Activo</div>
-        </div>
-      </div>
-
-      <!-- Recent Citas -->
-      <div class="panel">
-        <div class="panel__header">
-          <h2>Últimas citas</h2>
-          <a href="/admin/citas"><span class="panel__badge">Ver todas</span></a>
-        </div>
-        {citas && citas.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Dueño</th>
-                <th>Mascota</th>
-                <th>Servicio</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {citas.map((cita: any) => (
-                <tr>
-                  <td>
-                    <strong>{cita.nombre}</strong>
-                    <br/><span style="font-size:0.8rem;color:var(--text-muted)">{cita.email}</span>
-                  </td>
-                  <td>{cita.mascota} <span style="font-size:0.8rem;color:var(--text-muted)">({cita.tipo_mascota})</span></td>
-                  <td>{cita.servicio}</td>
-                  <td>{formatDate(cita.fecha)}</td>
-                  <td><span class="status status--pending">Pendiente</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div class="empty">No hay citas registradas todavía</div>
-        )}
-      </div>
-
-      <!-- Recent Messages -->
-      <div class="panel">
-        <div class="panel__header">
-          <h2>Mensajes recientes</h2>
-          <a href="/admin/mensajes"><span class="panel__badge">Ver todos</span></a>
-        </div>
-        {mensajes && mensajes.length > 0 ? (
-          mensajes.map((m: any) => (
-            <div class="msg-card">
-              <div class="msg-card__header">
-                <span class="msg-card__name">{m.nombre} — {m.email}</span>
-                <span class="msg-card__date">{formatDate(m.created_at)}</span>
-              </div>
-              {m.asunto && <div class="msg-card__subject">{m.asunto}</div>}
-              <div class="msg-card__text">{m.mensaje}</div>
-            </div>
-          ))
-        ) : (
-          <div class="empty">No hay mensajes todavía</div>
-        )}
-      </div>
-    </main>
+      <p class="stat-card__label">Textos editados</p>
+      <p class="stat-card__value">{contenidosCount ?? 0}</p>
+    </div>
   </div>
-</body>
-</html>
+
+  <div class="panel">
+    <div class="panel__header">
+      <h2>Últimos mensajes</h2>
+      <a href="/admin/mensajes"><span class="panel__badge">Ver todos</span></a>
+    </div>
+    {mensajes && mensajes.length > 0 ? (
+      mensajes.map((m: any) => (
+        <article class="mensaje">
+          <div class="mensaje__cabecera">
+            <span class="mensaje__nombre">{m.nombre}</span>
+            <time class="mensaje__fecha" datetime={m.created_at}>{formatearFecha(m.created_at)}</time>
+          </div>
+          <p class="mensaje__email">{m.email}</p>
+          {m.asunto && <p class="mensaje__asunto">{m.asunto}</p>}
+          <p class="mensaje__texto">{m.mensaje}</p>
+        </article>
+      ))
+    ) : (
+      <p class="vacio">Todavía no ha llegado ningún mensaje</p>
+    )}
+  </div>
+</AdminLayout>
+
+<style>
+  .mensaje {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .mensaje:last-child {
+    border-bottom: none;
+  }
+
+  .mensaje__cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin-bottom: var(--space-1);
+  }
+
+  .mensaje__nombre {
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-sm);
+  }
+
+  .mensaje__fecha {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .mensaje__email {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-1);
+  }
+
+  .mensaje__asunto {
+    font-size: var(--text-sm);
+    color: var(--color-primary-dark);
+    font-weight: var(--weight-medium);
+    margin-bottom: var(--space-1);
+  }
+
+  .mensaje__texto {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+</style>

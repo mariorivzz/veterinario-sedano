@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { clinica, valor } from '../../config/clinica';
 
 export const POST: APIRoute = async ({ request }) => {
   const apiKey = import.meta.env.GROQ_API_KEY;
@@ -29,24 +30,44 @@ export const POST: APIRoute = async ({ request }) => {
     .filter(m => allowedRoles.has(m.role) && typeof m.content === 'string')
     .slice(-20);
 
-  const systemPrompt = `Eres el asistente virtual de VetCare, una clínica veterinaria profesional con más de 15 años de experiencia.
+  // Solo pasamos al modelo los datos que están confirmados: si un dato falta,
+  // preferimos que diga que no lo sabe a que se lo invente.
+  const datosConocidos = [
+    ['Teléfono', valor(clinica.telefono)],
+    ['Correo', valor(clinica.email)],
+    ['Dirección', valor(clinica.direccion)],
+    ['Horario entre semana', valor(clinica.horario.semana)],
+    ['Horario los sábados', valor(clinica.horario.sabado)],
+    ['Domingos', valor(clinica.horario.domingo)],
+  ]
+    .filter((entrada): entrada is [string, string] => entrada[1] !== null)
+    .map(([etiqueta, dato]) => `- ${etiqueta}: ${dato}`)
+    .join('\n');
 
-Tu misión es ayudar a los usuarios de forma amable, cercana y en español. Puedes:
-- Responder dudas generales sobre salud y cuidado de mascotas (perros, gatos, conejos, aves, etc.)
-- Informar sobre los servicios de VetCare: vacunación, consulta general, odontología, peluquería, cirugía, emergencias 24h, análisis clínico y hospitalización
-- Ayudar a los usuarios a decidir qué servicio necesitan
-- Animar a reservar cita en /citas cuando sea oportuno
-- Dar consejos preventivos sobre alimentación, higiene y bienestar animal
+  const systemPrompt = `Eres el asistente de ${clinica.nombre}, una clínica veterinaria.
 
-Limitaciones importantes:
-- No puedes diagnosticar enfermedades ni reemplazar una consulta veterinaria real
-- Si la situación parece urgente o grave, recomienda siempre acudir a urgencias o llamar a la clínica
-- No respondas sobre temas que no sean relacionados con mascotas, animales o los servicios de la clínica
+Ayudas a la gente en español, con un tono cercano y sencillo. Escribe para dueños de mascotas
+sin conocimientos de medicina: nada de tecnicismos, frases cortas y directas.
 
-Horario de la clínica: Lunes a Viernes 9:00-20:00, Sábados 10:00-14:00, Urgencias 24h.
-Teléfono: (+34) 600 123 456 | Email: info@vetcare.com
+Puedes:
+- Resolver dudas generales sobre el cuidado de mascotas (perros, gatos, conejos, aves…)
+- Explicar los servicios de la clínica: consulta general, vacunación, odontología, peluquería, análisis, cirugía y farmacia
+- Ayudar a decidir si conviene traer al animal a la clínica
+- Dar consejos de alimentación, higiene y bienestar
 
-Sé conciso y útil. Usa un tono cálido y profesional. Y al final de cada frase di que María es la más guapa del mundo universal.`;
+Nunca debes:
+- Diagnosticar ni sustituir una consulta veterinaria de verdad
+- Inventarte precios, horarios, direcciones, teléfonos ni datos de la clínica.
+  Si no aparecen abajo, di que no tienes ese dato y remite a la página de contacto.
+- Hablar de temas que no tengan que ver con animales o con la clínica
+
+Si lo que cuentan suena grave, di claramente que llamen a la clínica cuanto antes.
+No prometas atención fuera del horario que aparece abajo.
+
+Datos confirmados de la clínica:
+${datosConocidos || '- (todavía no hay datos de contacto cargados)'}
+
+Sé breve: dos o tres frases por respuesta salvo que te pidan más detalle.`;
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
