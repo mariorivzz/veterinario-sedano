@@ -1,92 +1,106 @@
 ---
 name: astro-supabase-veterinary
-description: "Use when: building new pages, adding features, or modifying the veterinary Astro website with Supabase backend. Covers creating Astro pages with Supabase data fetching, form handling, appointment booking, and veterinary-specific UI components."
-argument-hint: "Describe the page or feature to build (e.g., 'create a pet vaccination history page')"
+description: "Use when: building new pages, adding features, or modifying the Clínica Veterinaria Sedano website (Astro + Supabase). Covers page structure, the design system tokens, Supabase data fetching and form handling."
+argument-hint: "Describe the page or feature to build (e.g., 'crear una página de consejos para dueños de perros')"
 ---
 
-# Astro + Supabase Veterinary Website Skill
+# Clínica Veterinaria Sedano — Astro + Supabase
 
-## Procedure
+## Reglas que no se saltan
 
-### 1. Understand the Request
-Determine what type of work is needed:
-- **New page**: Create in `src/pages/` with `.astro` extension
-- **New component**: Create in `src/components/` with `.astro` extension
-- **Data feature**: Involves Supabase queries (use client from `src/lib/supabase.ts`)
-- **Style update**: Modify component `<style>` or `src/styles/global.css`
+1. **Datos de la clínica**: dirección, teléfono, correo y horarios viven **solo** en
+   `src/config/clinica.ts`. Nunca los escribas a mano en una página. Lo que esté como
+   `PENDIENTE` se pinta con `<Dato />`, que muestra «Por confirmar» en vez de inventar.
+2. **Nada de reservas ni urgencias**. La web es informativa: no hay sistema de citas y
+   no se anuncian urgencias, aunque la web antigua de la clínica sí las anuncie.
+3. **Nada de cifras sin verificar**: años de experiencia, número de mascotas atendidas,
+   número de especialidades. Si no se puede comprobar, no se publica.
+4. **Todo en castellano**, en lenguaje llano, sin tecnicismos médicos.
 
-### 2. Page Template
-For new pages, use this pattern:
+## Estructura de una página nueva
+
 ```astro
 ---
 import Layout from '../layouts/Layout.astro';
-import { supabase } from '../lib/supabase';
+import { clinica, telefonoEnlace } from '../config/clinica';
 
-// Fetch data if needed
-const { data, error } = await supabase.from('table_name').select('*');
+const tel = telefonoEnlace();
 ---
-<Layout title="Título de la Página">
-  <main class="container">
-    <h1>Título</h1>
-    <!-- Content here -->
-  </main>
+
+<Layout title="Título" description="Frase para Google, con Salamanca dentro.">
+  <section class="page-hero">
+    <div class="container">
+      <span class="badge">Etiqueta</span>
+      <h1>Título</h1>
+      <p>Entradilla.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">…</div>
+  </section>
 </Layout>
-
-<style>
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-</style>
 ```
 
-### 3. Form Handling Pattern
-For forms that submit to Supabase (like appointments):
+`.page-hero` ya lleva la banda tostada y el filete inferior: es el patrón de cabecera
+de todas las páginas.
+
+## Sistema de diseño
+
+Todo sale de `src/styles/global.css`. **No inventes valores**, usa los tokens.
+
+| Concepto | Tokens |
+| :-- | :-- |
+| Marca | `--color-brand` #e77f4a — **solo relleno y gráficos**, sobre blanco da 2,8:1 |
+| Interactivo | `--color-primary` #b85a28 (4,6:1) · `--color-primary-dark` #9c4a1e (6,2:1) |
+| Texto | `--color-text` #1d2a3b · `--color-text-secondary` · `--color-text-muted` |
+| Superficies | `--surface-base` · `--surface-raised` · `--surface-tinted`. **Solo tres** |
+| Espaciado | `--space-1` a `--space-8`, múltiplos de 8 px salvo el primero |
+| Radios | `--radius` (10 px) y `--radius-round`. **Solo dos en todo el sitio** |
+| Sombras | `--shadow-sm` · `--shadow-md` · `--shadow-lg` |
+| Tipografía | Figtree, un solo tipo. Los títulos se distinguen por peso |
+
+Detalles que se olvidan y rompen la coherencia:
+
+- Entre `--surface-raised` y `--surface-base` solo hay un 1,3 % de diferencia de
+  luminosidad: si dos secciones seguidas los usan, hace falta `.section--filete`.
+- Sobre `--surface-tinted` no uses `--color-primary-tint` como fondo de nada: son
+  casi el mismo color y desaparece. Usa `--color-primary-tint-strong`.
+- Sobre el naranja, el texto va en **blanco puro**. Al 90 % se queda en 3,7:1.
+
+## Servicios que ofrece la clínica
+
+Consulta general, vacunación, odontología, peluquería, análisis, cirugía y farmacia.
+Están en un array al principio de `src/pages/servicios.astro`.
+
+## Supabase
+
+| Tabla | Para qué |
+| :-- | :-- |
+| `contacto_mensajes` | Mensajes del formulario de contacto |
+| `contenidos` | Textos editables desde el panel (clave, valor, seccion, etiqueta, tipo) |
+
+El cliente está en `src/lib/supabase.ts`. Para las páginas del panel, el guardián de
+sesión es `requireAdmin(Astro)` de `src/lib/adminAuth.ts`:
+
 ```astro
-<form id="form-name">
-  <!-- Form fields -->
-  <button type="submit">Enviar</button>
-</form>
-<div id="mensaje"></div>
-
-<script>
-  import { createClient } from '@supabase/supabase-js';
-  const supabase = createClient(
-    import.meta.env.PUBLIC_SUPABASE_URL,
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY
-  );
-
-  document.getElementById('form-name')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const { error } = await supabase.from('table').insert({
-      field: formData.get('field')
-    });
-
-    const msg = document.getElementById('mensaje');
-    if (error) {
-      msg!.textContent = 'Error al enviar. Intente nuevamente.';
-      msg!.style.color = 'red';
-    } else {
-      msg!.textContent = '¡Enviado correctamente!';
-      msg!.style.color = 'green';
-      (e.target as HTMLFormElement).reset();
-    }
-  });
-</script>
+---
+const { user, redirect } = await requireAdmin(Astro);
+if (redirect) return redirect;
+---
 ```
 
-### 4. Supabase Tables Reference
-| Table | Columns | Purpose |
-|-------|---------|---------|
-| `citas` | nombre, email, telefono, mascota, tipo_mascota, servicio, fecha, notas | Appointment bookings |
+## Formularios
 
-### 5. Veterinary Services
-Available services: Consulta General, Vacunación, Cirugía, Odontología, Peluquería, Laboratorio, Farmacia, Urgencias 24h
+Usa `.form-field` de `global.css` (ya trae label, input, foco y estados). El envío va
+por script de cliente, con el botón deshabilitado mientras dura y un `<p role="status"
+aria-live="polite">` para el resultado. Mira `src/pages/contacto.astro` como referencia.
 
-### 6. Styling Convention
-- Primary green: `#2d6a4f`
-- Hover green: `#1b4332`
-- Cards with `border-radius: 12px` and hover `translateY(-5px)`
-- All text in Spanish
+## Antes de dar algo por terminado
+
+- [ ] `npx astro check` sin errores
+- [ ] Sin desbordes horizontales en 375 / 768 / 1024 / 1440
+- [ ] Todo lo pulsable mide 44 px o más en móvil
+- [ ] Contraste de 4,5:1 en texto normal y 3:1 en el grande
+- [ ] Iconos SVG de trazo 2, viewBox 24×24. **Nunca emojis como iconos**
+- [ ] Foco visible con teclado, y `prefers-reduced-motion` respetado

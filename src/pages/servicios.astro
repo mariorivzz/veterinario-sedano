@@ -85,10 +85,14 @@ const servicios = [
 </Layout>
 
 <style>
+  /* Misma banda tostada que la portada: es el patrón de «cabecera de página» */
   .page-hero {
     padding: var(--space-7) 0 var(--space-5);
     text-align: center;
-    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(231, 127, 74, 0.08) 0%, transparent 70%);
+    background:
+      radial-gradient(ellipse 60% 60% at 50% 0%, rgba(231, 127, 74, 0.14) 0%, transparent 70%),
+      var(--surface-tinted);
+    border-bottom: 1px solid var(--color-border-light);
   }
 
   .page-hero h1 {
@@ -105,7 +109,7 @@ const servicios = [
   }
 
   .services {
-    padding-top: 0;
+    padding-top: var(--space-7);
   }
 
   .services__grid {
@@ -135,7 +139,8 @@ const servicios = [
   }
 
   .cta-banner p {
-    color: rgba(255, 255, 255, 0.9);
+    /* Blanco puro: al 90 % daba 3,72:1 sobre el extremo claro del degradado */
+    color: #fff;
     font-size: var(--text-sm);
   }
 

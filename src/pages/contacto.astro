@@ -171,15 +171,18 @@ const email = valor(clinica.email);
 </script>
 
 <style>
+  /* Misma banda tostada que la portada: es el patrón de «cabecera de página» */
   .page-hero {
     padding: var(--space-7) 0 var(--space-5);
     text-align: center;
-    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(231, 127, 74, 0.08) 0%, transparent 70%);
+    background:
+      radial-gradient(ellipse 60% 60% at 50% 0%, rgba(231, 127, 74, 0.14) 0%, transparent 70%),
+      var(--surface-tinted);
+    border-bottom: 1px solid var(--color-border-light);
   }
 
-  /* La cabecera ya deja aire suficiente: la sección no vuelve a separarse */
   .contact {
-    padding-top: 0;
+    padding-top: var(--space-7);
   }
 
   .page-hero h1 {
@@ -238,20 +241,23 @@ const email = valor(clinica.email);
     color: var(--color-text-secondary);
     font-size: var(--text-sm);
     line-height: 1.6;
+    /* El correo es largo: en pantallas de 320 px se saldría */
+    overflow-wrap: anywhere;
   }
 
   .contact__item a {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    color: var(--color-primary);
+    /* El tono claro daba 4,49:1 sobre la base, justo por debajo del mínimo */
+    color: var(--color-primary-dark);
     font-weight: var(--weight-semibold);
     text-decoration: underline;
     text-underline-offset: 3px;
   }
 
   .contact__item a:hover {
-    color: var(--color-primary-dark);
+    color: var(--color-primary);
   }
 
   /* ==========================================

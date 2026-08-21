@@ -168,9 +168,13 @@ const tel = telefonoEnlace();
   /* ==========================================
      Portada
      ========================================== */
+  /* Nivel 3: la portada es la banda más tostada. A partir de aquí
+     la página se va aclarando hasta el pie. */
   .hero {
     position: relative;
     overflow: hidden;
+    background: var(--surface-tinted);
+    border-bottom: 1px solid var(--color-border-light);
     /* Menos aire abajo: la sección siguiente ya trae el suyo */
     padding: var(--space-6) 0 var(--space-5);
     display: flex;
@@ -186,16 +190,17 @@ const tel = telefonoEnlace();
   .hero__gradient {
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(ellipse 60% 50% at 0% 50%, rgba(231, 127, 74, 0.10) 0%, transparent 70%),
-      radial-gradient(ellipse 50% 60% at 100% 0%, rgba(231, 127, 74, 0.06) 0%, transparent 70%);
+    background: radial-gradient(ellipse 55% 60% at 100% 0%, rgba(231, 127, 74, 0.16) 0%, transparent 70%);
   }
 
   .hero__dots {
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(circle, rgba(231, 127, 74, 0.09) 1px, transparent 1px);
-    background-size: 32px 32px;
+    background-image: radial-gradient(circle, rgba(184, 90, 40, 0.07) 1px, transparent 1px);
+    background-size: 28px 28px;
+    /* Se difumina hacia abajo para no cortar de golpe contra la sección siguiente */
+    -webkit-mask-image: linear-gradient(to bottom, #000 25%, transparent 95%);
+    mask-image: linear-gradient(to bottom, #000 25%, transparent 95%);
   }
 
   .hero__inner {
@@ -279,7 +284,9 @@ const tel = telefonoEnlace();
     gap: var(--space-2);
     min-height: 44px;
     padding: var(--space-2) var(--space-3);
+    /* Va dentro del panel blanco, así que el tinte suave sí contrasta aquí */
     background: var(--color-primary-tint);
+    border: 1px solid var(--color-primary-tint-strong);
     color: var(--color-primary-dark);
     border-radius: var(--radius);
     font-size: var(--text-sm);
@@ -313,8 +320,10 @@ const tel = telefonoEnlace();
   /* ==========================================
      Por qué nosotros
      ========================================== */
+  /* Nivel 2: banda blanca. Contra la base solo hay un 1,3 % de diferencia
+     de luminosidad, así que el filete no es decorativo: sin él no se ve. */
   .why {
-    background: var(--color-surface);
+    background: var(--surface-raised);
     border-top: 1px solid var(--color-border-light);
     border-bottom: 1px solid var(--color-border-light);
   }
@@ -384,7 +393,8 @@ const tel = telefonoEnlace();
 
   .cta__inner p {
     font-size: var(--text-lg);
-    color: rgba(255, 255, 255, 0.9);
+    /* Blanco puro: al 90 % daba 3,72:1 sobre el extremo claro del degradado */
+    color: #fff;
     margin: 0 auto var(--space-4);
     max-width: 48ch;
   }
@@ -402,7 +412,8 @@ const tel = telefonoEnlace();
     min-height: 44px;
     padding: 0 var(--space-2);
     font-size: var(--text-sm);
-    color: rgba(255, 255, 255, 0.9);
+    /* Blanco puro: al 90 % daba 3,72:1 sobre el extremo claro del degradado */
+    color: #fff;
     text-decoration: underline;
     text-underline-offset: 3px;
   }
